@@ -4,6 +4,7 @@ DEGO Course Project - Team 6
 ## Team Members:
 - Leonor Oliveira 
 - António Grincho 56894
+- Lu Gan 73630
 
 
 ## Project Description
