@@ -1,15 +1,15 @@
 # dego-project-team6
 DEGO Course Project - Team 6
 
-## Team Members:
+# Team Members:
 - Leonor Oliveira 
 - António Grincho 56894
 
 
-## Project Description
+# Project Description
 Credit scoring bias analysis for DEGO course.
 
-## Structure
+# Structure
 - ‘data /‘ - Dataset files
 - ‘notebooks /‘ - Jupyter analysis notebooks
 - ‘src /‘ - Python source code
