@@ -20,10 +20,13 @@ Credit scoring bias analysis for DEGO course.
 # Executive Summary
 Executive Summary
 NovaCred, a fintech company that uses automated systems to evaluate credit applications, recently received a regulatory inquiry regarding potential discrimination in its lending decisions. Our team was tasked with conducting a governance audit of the credit application dataset to evaluate data quality, algorithmic bias, and privacy compliance.
+
 The analysis was structured around three core governance pillars:
-Data Quality Assessment
-Bias & Fairness Evaluation
-Privacy and Regulatory Compliance
+
+1. Data Quality Assessment
+2. Bias & Fairness Evaluation
+3. Privacy and Regulatory Compliance
+
 The goal of this audit is to identify operational risks in NovaCred’s credit decision pipeline and propose governance controls aligned with GDPR and the EU AI Act.
   
 ## Key Findings
