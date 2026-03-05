@@ -1,12 +1,22 @@
-# Auto-generated from data_clean_notebook.ipynb
-# Generated on 2026-03-04T23:41:19
+def run_data_quality_pipeline(data):
+    """
+    Clean + flatten credit applications dataset.
 
+    Parameters
+    ----------
+    data : str | pathlib.Path | pandas.DataFrame
+        - Path to raw JSON file, OR
+        - Already-loaded raw DataFrame
 
-# ---- Cell 1 ----
-def run_data_quality_pipeline(path):
+    Returns
+    -------
+    pandas.DataFrame
+        Cleaned + flattened dataset ready for analysis.
+    """
     import pandas as pd
     import numpy as np
     import ast, json, re
+    from pathlib import Path
 
     NULL_LIKE = {"", " ", "na", "n/a", "nan", "none", "null", "nil", "undefined"}
 
@@ -42,9 +52,9 @@ def run_data_quality_pipeline(path):
             return bool(x)
         if isinstance(x, str):
             s = x.strip().lower()
-            if s in {"true","1","yes","y"}:
+            if s in {"true", "1", "yes", "y"}:
                 return True
-            if s in {"false","0","no","n"}:
+            if s in {"false", "0", "no", "n"}:
                 return False
         return np.nan
 
@@ -72,25 +82,36 @@ def run_data_quality_pipeline(path):
 
             try:
                 amt = float(amt)
-            except:
+            except Exception:
                 amt = 0.0
 
-            out[f"spend_{cat}"] = out.get(f"spend_{cat}", 0) + amt
+            out[f"spend_{cat}"] = out.get(f"spend_{cat}", 0.0) + amt
             amounts.append(amt)
             cats.add(cat)
 
         out["spend_txn_count"] = len(amounts)
-        out["spend_total"] = sum(amounts)
-        out["spend_mean"] = np.mean(amounts) if amounts else 0
-        out["spend_max"] = np.max(amounts) if amounts else 0
+        out["spend_total"] = float(np.sum(amounts)) if amounts else 0.0
+        out["spend_mean"] = float(np.mean(amounts)) if amounts else 0.0
+        out["spend_max"] = float(np.max(amounts)) if amounts else 0.0
         out["spend_unique_cats"] = len(cats)
 
         return out
 
     # ---------------- LOAD DATA ----------------
-    df = pd.read_json(path)
+    if isinstance(data, (str, Path)):
+        df = pd.read_json(str(data))
+    elif isinstance(data, pd.DataFrame):
+        df = data.copy(deep=True)
+    else:
+        raise TypeError("data must be a file path (str/Path) or a pandas DataFrame")
 
     # ---------------- FLATTEN JSON ----------------
+    # Ensure expected columns exist (more stable failures)
+    expected = ["applicant_info", "financials", "decision", "spending_behavior"]
+    missing = [c for c in expected if c not in df.columns]
+    if missing:
+        raise KeyError(f"Raw data missing expected columns: {missing}")
+
     applicant_df = pd.json_normalize(df["applicant_info"].apply(safe_parse))
     applicant_df.columns = ["applicant_" + c for c in applicant_df.columns]
 
@@ -99,11 +120,11 @@ def run_data_quality_pipeline(path):
 
     decision_df = pd.json_normalize(df["decision"].apply(safe_parse))
     decision_df.columns = ["decision_" + c for c in decision_df.columns]
+    if "decision_loan_approved" not in decision_df.columns:
+        raise KeyError("Expected 'loan_approved' inside decision payload")
     decision_df = decision_df[["decision_loan_approved"]]
 
-    spending_df = pd.DataFrame(
-        list(df["spending_behavior"].apply(parse_spending))
-    ).fillna(0)
+    spending_df = pd.DataFrame(list(df["spending_behavior"].apply(parse_spending))).fillna(0)
 
     # ---------------- COMBINE ----------------
     df_clean = pd.concat(
@@ -115,6 +136,17 @@ def run_data_quality_pipeline(path):
         ],
         axis=1,
     )
+
+    # ---------------- STANDARDIZE EMPTY STRINGS ----------------
+    # This reduces “tiny missingness differences” across notebooks
+    for col in ["applicant_gender", "applicant_zip_code"]:
+        if col in df_clean.columns:
+            df_clean[col] = (
+                df_clean[col]
+                .astype("object")
+                .apply(lambda x: x.strip() if isinstance(x, str) else x)
+                .replace(list(NULL_LIKE), np.nan)
+            )
 
     # ---------------- LABEL CLEAN ----------------
     df_clean["decision_loan_approved"] = df_clean["decision_loan_approved"].apply(to_bool)
@@ -135,6 +167,10 @@ def run_data_quality_pipeline(path):
     if "spend_total" in df_clean.columns:
         df_clean.loc[df_clean["spend_total"] < 0, "spend_total"] = np.nan
 
+    # ---------------- DROP THE NOISY COLUMN ----------------
+    # Your teammate saw fin_annual_salary ~99% missing. Drop for consistency.
+    df_clean.drop(columns=["fin_annual_salary"], inplace=True, errors="ignore")
+
     # ---------------- REMOVE PII ----------------
     pii_cols = [
         "applicant_full_name",
@@ -148,5 +184,4 @@ def run_data_quality_pipeline(path):
     df_clean.drop(columns=pii_cols, inplace=True, errors="ignore")
 
     print("Final dataset shape:", df_clean.shape)
-
     return df_clean
