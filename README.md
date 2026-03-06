@@ -39,7 +39,7 @@ The goal of this audit is to identify operational risks in NovaCred’s credit d
 # Key Findings
 
 
-# Data Quality Analysis:
+# Data Quality Analysis
 The original dataset consisted of 502 credit applications stored in a nested JSON structure. Each record contained multiple nested objects, including applicant information, financial data, spending behavior, and loan decision outcomes. Because of this structure, the dataset first required transformation into a flat tabular format to allow analysis.
 
 ## Data Transformation
@@ -86,7 +86,7 @@ The distribution of the target variable was:
 This relatively balanced distribution makes the dataset suitable for fairness and bias analysis, which will be explored in the next phase of the project.
 From a governance perspective, the high level of missing information in several fields indicates weaknesses in data collection and validation processes. Implementing stronger data validation controls during data ingestion would help ensure more reliable credit decision data in the future.
 
-# Bias & Fairness:
+# Bias & Fairness
 Following the data cleaning process, we analyzed whether NovaCred’s historical lending decisions exhibit potential bias across demographic groups. Since automated credit decision systems can unintentionally produce discriminatory outcomes, fairness analysis is essential for responsible governance and regulatory compliance.
 
 ## Gender Approval Rate Comparison
@@ -133,8 +133,50 @@ However, ZIP code did not show evidence of association with loan approval outcom
 Overall, the fairness analysis indicates that approval outcomes are statistically associated with gender, although the observed effect size is relatively modest. These findings highlight the importance of ongoing fairness monitoring and governance oversight to ensure that automated credit decision systems operate equitably.
 
 
-Privacy Risks:
--
--
--
+# Privacy Risks
+Because credit application datasets contain sensitive personal information, we evaluated the dataset from a privacy and data protection perspective. The objective of this analysis was to identify personally identifiable information (PII) present in the dataset and demonstrate how privacy-preserving techniques such as pseudonymization can reduce the risk of exposing sensitive data while still allowing analytical use.
 
+## Identification of Personal Data
+The dataset contains several attributes that qualify as personally identifiable information (PII) because they can directly identify applicants or allow individuals to be re-identified when combined with other variables.
+The following PII fields were identified in the dataset:
+- full_name - applicant´s full legal name
+- email - personal email address
+- ssn - social security number
+- ip_address - ip addressed used during application
+- date_of_birth - applicant date of birth
+- zip_code - geographic location
+
+Some of these fields, particularly SSN, email, and IP address, are considered highly sensitive identifiers and require strong protection mechanisms under data protection regulations.
+
+## Privacy Risks in the Raw Dataset
+In the original dataset, these identifiers are stored in plain text format, which introduces several governance and security risks:
+- Direct identifiers such as names and SSNs are accessible in raw form
+- Personal identifiers can be used to re-identify individuals
+- No protection mechanisms (e.g., hashing or encryption) are applied
+- The dataset includes more personal information than strictly necessary for analysis
+
+## Pseudonymization Demonstration
+To demonstrate how privacy risks can be reduced, we applied pseudonymization techniques to sensitive identifiers.
+Specifically, the Social Security Number (SSN) field was transformed using a cryptographic hashing function. Hashing converts the original identifier into a fixed-length encoded value that cannot easily be reversed.
+Example transformation:
+- XXX-XX-1234 - a8f5f167f44f4964e6c998dee827110c
+
+After hashing, the identifier can no longer directly reveal the original SSN while still allowing consistent linking of records if needed for analysis.
+This approach reduces the risk of exposing sensitive personal identifiers while preserving analytical utility.
+
+## GDPR Implications
+The presence of multiple direct identifiers in the dataset highlights several areas where stronger governance controls are required to align with GDPR principles.
+- Data minimization - Excessive personal identifiers included in analytical dataset
+- Security of processing - Sensitive identifiers stored without protection
+- Privacy by design - No pseudonymization applied in raw dataset
+
+Implementing pseudonymization techniques, such as the hashing approach demonstrated in this analysis, can significantly improve compliance with GDPR privacy-by-design requirements.
+
+## Governance Implications
+From a governance perspective, organizations handling credit application data should implement additional privacy controls, including:
+- pseudonymization of sensitive identifiers before analysis
+- encryption of personal data during storage and transmission
+- clear data retention policies
+- strict access controls for sensitive personal information
+
+These controls help ensure that financial institutions process personal data in a manner that protects individuals while still enabling responsible analytical use.
