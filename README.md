@@ -18,8 +18,9 @@ Credit scoring bias analysis for DEGO course.
 ## Structure
 - ‘data /‘ - Dataset files
 - ‘notebooks /‘ - Jupyter analysis notebooks
+- 'presentation /‘ - Final deliverables
 - ‘src /‘ - Python source code
-- ‘reports /‘ - Final deliverables
+
 
 
 # Executive Summary
